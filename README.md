@@ -13,8 +13,15 @@ This tool is created to help analyse and plot 1D spectra. Utilities for this too
 
 - Fit tool that can fit three different functions:
   - Linear line fit
-  - Polynomial line fit
+  - Polynomial line fit with user-specified degree of freedom/number of variables
+  - Exponential fit
+  - Powerlaw fit
+  - Sine fit
   - Gaussian fit with user-specified number of peaks
+  - Exponential Gaussian fit (TBD)
+  - Lorentzian fit (TBD)
+  - Harmonic Oscillator fit (TBD)
+  - Lognormal fit (TBD)
   
 - Grid formatting option
 - Setting figure to a tight window layout
