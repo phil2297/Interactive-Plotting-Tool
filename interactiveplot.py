@@ -342,7 +342,7 @@ class App(tk.Frame):
                              x=self.wavelength[self.goodrange])
         result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
         print(result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r-.', label='Linear fit')
+        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r--x', label='Linear fit')
         self.plot_fit()
 
     def polynomial_fit(self, event):
@@ -353,7 +353,7 @@ class App(tk.Frame):
                              x=self.wavelength[self.goodrange])
         result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
         print(result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r-.', label='Polynomial fit')
+        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r--x', label='Polynomial fit')
         self.plot_fit()
 
     def exponential_fit(self, event):
@@ -362,7 +362,7 @@ class App(tk.Frame):
         params = model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange])
         result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
         print(result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r-.', label='Exponential fit')
+        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r--x', label='Exponential fit')
         self.plot_fit()
     
     def powerlaw_fit(self, event):
@@ -371,7 +371,7 @@ class App(tk.Frame):
         params = model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange])
         result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
         print(result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r-.', label='Exponential fit')
+        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r--x', label='Exponential fit')
         self.plot_fit()
 
     def sine_fit(self, event):
@@ -380,7 +380,7 @@ class App(tk.Frame):
         params = model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange])
         result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
         print(result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r-.', label='Exponential fit')
+        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r--x', label='Exponential fit')
         self.plot_fit()
     
     def gaussian_fit(self, event):

@@ -22,7 +22,7 @@ def exponential_data(x, a, b, *args):
     return y + noise, noise
 
 def powerlaw_data(x, a, b, *args):
-    y = a*np.power(x, 6)
+    y = np.power(x, 6)
     noise = np.std(y)/5 * np.random.normal(size=x.size)
     return y + noise, noise
 
@@ -40,6 +40,7 @@ def randconst():
     return np.random.uniform(low=-10, high=10, size=1)
 
 def save_data(F, filename):
+    seed = np.random.seed(int(np.random.random()*100))
     x = np.random.uniform(low=-10, high=10, size=100)
     a = randconst()
     b = randconst()
