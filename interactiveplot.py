@@ -81,9 +81,9 @@ class App(tk.Frame):
         peaklike_funcs.add_command(label='Lorentzian', command=self.choose_lorentzian)
         peaklike_funcs.add_command(label='Harmonic Oscillator', command=self.choose_harmonicoscillator)
         peaklike_funcs.add_command(label='Lognormal', command=self.choose_lognormal)
-        fitmenu.add_cascade('Basic Functions', menu=basefuncs)
-        fitmenu.add_cascade('Periodic Functions', menu=periodicfuncs)
-        fitmenu.add_cascade('Peak-like Functions', menu=peaklike_funcs)
+        fitmenu.add_cascade(label='Basic Functions', menu=basefuncs)
+        fitmenu.add_cascade(label='Periodic Functions', menu=periodicfuncs)
+        fitmenu.add_cascade(label='Peak-like Functions', menu=peaklike_funcs)
 
         # Creating the options in the "format" drop down menu.
         self.gridvar = tk.BooleanVar()
