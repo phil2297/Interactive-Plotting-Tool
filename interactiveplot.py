@@ -6,7 +6,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from lmfit.models import GaussianModel, LinearModel, PolynomialModel
+import lmfit.models as mdl
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 from matplotlib.figure import Figure
@@ -70,7 +70,15 @@ class App(tk.Frame):
         # Creating the options in the "fit" drop down menu.
         fitmenu.add_command(label='Linear', command=self.choose_linear)
         fitmenu.add_command(label='Polynomial', command=self.choose_polynomial)
+        fitmenu.add_command(label='Exponential', command=self.choose_exponential)
+        fitmenu.add_command(label='Power Law', command=self.choose_powerlaw)
+        fitmenu.add_separator()
+        fitmenu.add_command(label='Sine', command=self.choose_sine)
         fitmenu.add_command(label='Gaussian', command=self.choose_gauss)
+        fitmenu.add_command(label='Exponential Gauss', command=self.choose_exponentialgauss)
+        fitmenu.add_command(label='Lorentzian', command=self.choose_lorentzian)
+        fitmenu.add_command(label='Harmonic Oscillator', command=self.choose_harmonicoscillator)
+        fitmenu.add_command(label='Lognormal', command=self.choose_lognormal)
 
         # Creating the options in the "format" drop down menu.
         self.gridvar = tk.BooleanVar()
@@ -83,6 +91,7 @@ class App(tk.Frame):
         formatmenu.add_command(label='Labels', command=self.label_making)
 
         # Creating the options for the "help" drop down menu.
+        helpmenu.add_command(label='Controls', command=self.dummy)
         helpmenu.add_command(label='Documentation', command=self.open_documentation)
         helpmenu.add_command(label='Contact', command=self.contact_info)
 
@@ -116,6 +125,9 @@ class App(tk.Frame):
         self.toolbar.pack(side=tk.BOTTOM, fill=tk.BOTH)
 
     def reset(self, event):
+        print('Resetting...')
+        self.figure_canvas.get_tk_widget().destroy()
+        self.toolbar.destroy()
         self.fitwindow.destroy()
         self.vlinelist = []
         self.points = []
@@ -184,7 +196,6 @@ class App(tk.Frame):
         smooth_window = self.pop_up_window('Smoothing level', '250x50',
                                            smooth, label1='Enter box smoothing')
         smoothwindow, smooth_ent = smooth_window
-        #self.fitwindow.bind('<Return>', smooth)
         
     def cut_data(self):
         self.initialize_fit_frame()
@@ -215,7 +226,6 @@ class App(tk.Frame):
             self.fitwindow.focus_set()    
         self.fitwindow.bind('<Return>', norm)
 
-
     # FIT MENU
         # Required operational functions
     def draw_vline(self, event):
@@ -226,7 +236,6 @@ class App(tk.Frame):
         self.vlinelist.append(L)
         self.points.append([x, y])
         self.figure_canvas.draw()
-        print(self.points)
 
     def line_removal(self):
         for i in range(len(self.vlinelist)): 
@@ -278,43 +287,102 @@ class App(tk.Frame):
 
     def choose_polynomial(self):
         self.initialize_fit_frame() 
+        def update_degree():
+            self.degree = int(polyent[f'ent_{0}'].get())
+            poly_window.destroy()
+            poly_window.update()
+            
+        poly_window, polyent = self.pop_up_window('Choose number of variables', 
+                                                  '350x60', update_degree,
+                                                  label1='Number of variables to fit (integer in [0,7]):')
         self.fitwindow.bind('<Return>', self.polynomial_fit)
+
+    def choose_exponential(self):
+        self.initialize_fit_frame()
+        self.fitwindow.bind('<Return>', self.exponential_fit)
+    
+    def choose_powerlaw(self):
+        self.initialize_fit_frame()
+        self.fitwindow.bind('<Return>', self.powerlaw_fit)
+    
+    def choose_sine(self):
+        self.initialize_fit_frame()
+        self.fitwindow.bind('<Return>', self.sine_fit)
 
     def choose_gauss(self):
         self.initialize_fit_frame()
         self.fitwindow.bind('<Return>', self.gaussian_fit)
-
+    
+    def choose_exponentialgauss(self):
+        self.dummy()
+        
+    def choose_lorentzian(self):
+        self.dummy()
+        
+    def choose_harmonicoscillator(self):
+        self.dummy()
+        
+    def choose_lognormal(self):
+        self.dummy()
+    
+    
+    def plot_fit(self):
+        self.line_removal()
+        self.axes.legend()
+        self.figure_canvas.draw()
+        self.vlinelist = []
+        self.points = []
+        
         # Functions that creates and fits the different models
     def linear_fit(self, event):
         """Fits a simple linear line to a chosen region."""
         self.fitregion()
-        model = LinearModel()
+        model = mdl.LinearModel()
         params = model.guess(self.flux[self.goodrange],
                              x=self.wavelength[self.goodrange])
         result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
         print(result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r--', label='Linear fit')
-        self.line_removal()
-        self.axes.legend()
-        self.figure_canvas.draw()
-        self.vlinelist = []
-        self.points = []
+        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r-.', label='Linear fit')
+        self.plot_fit()
 
     def polynomial_fit(self, event):
         """Fits a polynomial in a specified region with a specified degree."""
         self.fitregion()
-        model = PolynomialModel()
+        model = mdl.PolynomialModel(degree=self.degree)
         params = model.guess(self.flux[self.goodrange],
                              x=self.wavelength[self.goodrange])
         result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
         print(result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r--', label='Polynomial fit')
-        self.line_removal()
-        self.axes.legend()
-        self.figure_canvas.draw()
-        self.vlinelist = []
-        self.points = []
+        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r-.', label='Polynomial fit')
+        self.plot_fit()
 
+    def exponential_fit(self, event):
+        self.fitregion()
+        model = mdl.ExponentialModel()
+        params = model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange])
+        result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
+        print(result.fit_report())
+        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r-.', label='Exponential fit')
+        self.plot_fit()
+    
+    def powerlaw_fit(self, event):
+        self.fitregion()
+        model = mdl.PowerLawModel()
+        params = model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange])
+        result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
+        print(result.fit_report())
+        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r-.', label='Exponential fit')
+        self.plot_fit()
+
+    def sine_fit(self, event):
+        self.fitregion()
+        model = mdl.SineModel()
+        params = model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange])
+        result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
+        print(result.fit_report())
+        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r-.', label='Exponential fit')
+        self.plot_fit()
+    
     def gaussian_fit(self, event):
         """Fits a gaussian+linear fit to any given number of peaks chosen."""
         self.fitregion()
@@ -323,11 +391,11 @@ class App(tk.Frame):
         else:
             self.gausscenter = self.lines[2][0]
         
-        linear_model = LinearModel()
+        linear_model = mdl.LinearModel()
         if len(self.points) > 3:
-            gauss_models = [GaussianModel(prefix=f'g{i}_') for i in range(len(self.gausscenter))]
+            gauss_models = [mdl.GaussianModel(prefix=f'g{i}_') for i in range(len(self.gausscenter))]
             params = linear_model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange])
-            model = LinearModel()
+            model = mdl.LinearModel()
             for i in range(len(gauss_models)):
                 params.update(gauss_models[i].make_params())
                 params[f'g{i}_center'].set(value=self.gausscenter[i],
@@ -335,7 +403,7 @@ class App(tk.Frame):
                                            max=self.gausscenter[i]+0.005*self.gausscenter[i])
                 model += gauss_models[i]
         else:
-            gauss_model = GaussianModel()
+            gauss_model = mdl.GaussianModel()
             params = gauss_model.make_params()
             params['center'].set(value=self.gausscenter)
             params.update(gauss_model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange]))
@@ -343,14 +411,22 @@ class App(tk.Frame):
             model = gauss_model + linear_model
         result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
         print(result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r-o', label='Gaussian fit')
-        self.line_removal()
-        self.axes.legend()
-        self.figure_canvas.draw()
-        self.vlinelist = []
-        self.points = []
+        self.axes.plot(self.wavelength[self.goodrange], result.best_fit, 'r--x', label='Gaussian fit')
+        self.plot_fit()
 
-
+    def exponentialgauss_fit(self, event):
+        pass
+    
+    def lorentzian_fit(self, event):
+        pass
+    
+    def harmonicoscillator_fit(self, event):
+        pass
+    
+    def lognormal_fit(self, event):
+        pass
+    
+    
     # FORMAT MENU
     def pop_up_window(self, title, windowsize, updatefunc, **labels):
         """Template function to create a pop up, two-fielded writable
