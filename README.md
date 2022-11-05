@@ -1,4 +1,4 @@
-# Interactive-Plot-Tool
+# Interactive-Spectra-Plotting-Tool
 This tool is created to help analyse and plot 1D spectra. Utilities for this tool (will) include the ability to edit and view the spectra data in many different ways. It also includes tools to fit a multitude of different functions using the lmfit library and some custom made default functions. (Hopefully) You can even create a custom function that it will attempt to create.
 
 ## Current Features:
