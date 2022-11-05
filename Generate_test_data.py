@@ -22,7 +22,7 @@ def exponential_data(x, a, b, *args):
     return y + noise, noise
 
 def powerlaw_data(x, a, b, *args):
-    y = a*np.power(x, b)
+    y = a*np.power(x, 6)
     noise = np.std(y)/5 * np.random.normal(size=x.size)
     return y + noise, noise
 
@@ -44,6 +44,7 @@ def save_data(F, filename):
     a = randconst()
     b = randconst()
     c = randconst()
+    x = np.sort(x)
     Fdat, Ferr = F(x, a, b, c)
     np.savetxt(f'Test Data/Fit Tests/{filename}.dat', np.array([x, Fdat, Ferr]).T)
     

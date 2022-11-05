@@ -117,7 +117,7 @@ class App(tk.Frame):
         self.toolbar.update()
 
         self.axes = self.figure.add_subplot()
-        self.axes.step(self.wavelength, self.flux, label='Data', where='mid')    
+        self.axes.scatter(self.wavelength, self.flux, label='Data')#, where='mid')    
         self.axes.legend()    
 
         self.figure_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH,
