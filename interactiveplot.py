@@ -98,8 +98,8 @@ class App(tk.Frame):
 
         # Creating the options for the "help" drop down menu.
         helpmenu.add_command(label='Controls', command=self.dummy)
-        helpmenu.add_command(label='Documentation', command=self.open_documentation)
-        helpmenu.add_command(label='Contact', command=self.contact_info)
+        helpmenu.add_command(label='Documentation', command=self.dummy)#open_documentation)
+        helpmenu.add_command(label='Contact', command=self.dummy)#contact_info)
 
         # Initializing the drop down menus into the menu-bar.
         menubar.add_cascade(label='File', menu=filemenu)
@@ -123,7 +123,7 @@ class App(tk.Frame):
         self.toolbar.update()
 
         self.axes = self.figure.add_subplot()
-        self.axes.step(self.wavelength, self.flux, label='Data', where='mid')    
+        self.axes.step(self.x, self.y, label='Data', where='mid')    
         self.axes.legend()    
 
         self.figure_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH,
@@ -138,8 +138,8 @@ class App(tk.Frame):
         self.fitwindow.destroy()
         self.vlinelist = []
         self.points = []
-        self.wavelength = np.array(self.df['wavelength']).copy()
-        self.flux = np.array(self.df['flux']).copy()*1e19
+        self.x = np.array(self.df[self.xcol]).copy()*self.scalingfactor_x
+        self.y = np.array(self.df[self.ycol]).copy()*self.scalingfactor_y
         self.draw_figure(master=self.master)
     
 
@@ -159,26 +159,36 @@ class App(tk.Frame):
                                                       title = 'select a file',
                                                       filetypes = (('Data Files', '*.dat'),
                                                                    ('All Files', '*.*')))
+        self.df = pd.read_table(self.filename, delim_whitespace=True, header=None)
+        self.NAME = os.path.basename(os.path.normpath(os.path.splitext(self.filename)[0]))
+        self.df.name = self.NAME
+        self.column_amt = len(self.df.columns)
+        print(self.df.head())
         def create_data():
-            self.scalingfactor_x = float(scalefactor_ents['ent_0'].get())
-            self.scalingfactor_y = float(scalefactor_ents['ent_1'].get())
-            scalewindow.destroy()
-            scalewindow.update()
-            self.df = pd.read_table(self.filename, delim_whitespace=True, header=None)
-            self.NAME = os.path.basename(os.path.normpath(os.path.splitext(self.filename)[0]))
-            self.df.name = self.NAME
-            if len(self.df.columns) == 3:
-                self.df.columns = ['wavelength', 'flux', 'error']
+            if options_ents['ent_0'].get():
+                self.scalingfactor_x = float(options_ents['ent_0'].get())
+            else: 
+                self.scalingfactor_x = 1
+            if options_ents['ent_1'].get():
+                self.scalingfactor_y = float(options_ents['ent_1'].get())
             else:
-                self.df.columns = ['wavelength', 'flux', 'sum_flux', 'sky', 'error']
-            self.wavelength = np.array(self.df['wavelength']).copy()*self.scalingfactor_x
-            self.flux = np.array(self.df['flux']).copy()*self.scalingfactor_y
+                self.scalingfactor_y = 1
+                
+            self.xcol, self.ycol = int(options_ents['ent_2'].get()), int(options_ents['ent_3'].get())
+            options_window.destroy()
+            options_window.update()
+            self.x = np.array(self.df[self.xcol]).copy()*self.scalingfactor_x
+            self.y = np.array(self.df[self.ycol]).copy()*self.scalingfactor_y
             self.draw_figure(master=self.master)
             
     
-        scale_window = self.pop_up_window('Choose scaling factors', '250x75', create_data,
-                                    label1='X scaling factor:', label2='Y scaling factor')
-        scalewindow, scalefactor_ents = scale_window
+        options_window = self.pop_up_window('File options', '375x150', create_data,
+                                    label1='X-axis scaling factor (leave blank if none):',
+                                    label2='Y-axis scaling factor (leave blank if none):',
+                                    label3=f'Choose x-axis data column [0-{self.column_amt-1}]:',
+                                    label4=f'Choose y-axis data column [0-{self.column_amt-1}]:')
+        options_window, options_ents = options_window
+        
     def open_files(self):
         pass
 
@@ -208,10 +218,10 @@ class App(tk.Frame):
         def smooth():
             box_pts = int(smooth_ent[f'ent_{0}'].get())
             box = np.ones(box_pts)/box_pts
-            self.flux = np.convolve(self.flux, box, mode='same')
+            self.y = np.convolve(self.y, box, mode='same')
             self.draw_figure(master=self.fitwindow)
             self.fitwindow.focus_set()
-            self.flux = np.array(self.df['flux'])
+            self.y = np.array(self.df[self.ycol])
 
             smoothwindow.destroy()
             smoothwindow.update()
@@ -224,8 +234,8 @@ class App(tk.Frame):
         self.initialize_fit_frame()
         def cut(event):
             self.fitregion()
-            self.flux = np.delete(self.flux, self.goodrange)
-            self.wavelength = np.delete(self.wavelength, self.goodrange)
+            self.y = np.delete(self.y, self.goodrange)
+            self.x = np.delete(self.x, self.goodrange)
             self.line_removal()
             self.draw_figure(master=self.fitwindow)
             self.fitwindow.focus_set()   
@@ -233,19 +243,19 @@ class App(tk.Frame):
 
     def normalize_data(self):
         self.initialize_fit_frame()
-        self.flux = normalize(self.flux.reshape(1, -1))[0]
+        self.y = normalize(self.y.reshape(1, -1))[0]
         self.draw_figure(master=self.fitwindow)
-        self.flux = np.array(self.df['flux'])
+        self.y = np.array(self.df[self.ycol])
         self.fitwindow.focus_set()
     
     def normalize_section(self):
         self.initialize_fit_frame()
         def norm(event):
             self.fitregion()
-            self.flux[self.goodrange] = normalize(self.flux[self.goodrange].reshape(1, -1))[0]
+            self.y[self.goodrange] = normalize(self.y[self.goodrange].reshape(1, -1))[0]
             self.line_removal()
             self.draw_figure(master=self.fitwindow)
-            self.flux = np.array(self.df['flux']).copy()
+            self.y = np.array(self.df[self.ycol]).copy()
             self.fitwindow.focus_set()    
         self.fitwindow.bind('<Return>', norm)
 
@@ -283,8 +293,8 @@ class App(tk.Frame):
             self.rangemin = self.lines[1][0]
             self.rangemax = self.lines[0][0]
         self.goodregion = np.array([self.rangemin, self.rangemax])
-        self.goodrange = np.where((self.wavelength >= self.goodregion[0]) &
-                                  (self.wavelength <= self.goodregion[1]))
+        self.goodrange = np.where((self.x >= self.goodregion[0]) &
+                                  (self.x <= self.goodregion[1]))
 
     def initialize_fit_frame(self):
         try:
@@ -361,49 +371,49 @@ class App(tk.Frame):
         """Fits a simple linear line to a chosen region."""
         self.fitregion()
         model = mdl.LinearModel()
-        params = model.guess(self.flux[self.goodrange],
-                             x=self.wavelength[self.goodrange])
-        self.result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
+        params = model.guess(self.y[self.goodrange],
+                             x=self.x[self.goodrange])
+        self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], self.result.best_fit, 'r--x', label='Linear fit')
+        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Linear fit')
         self.plot_fit()
 
     def polynomial_fit(self, event):
         """Fits a polynomial in a specified region with a specified degree."""
         self.fitregion()
         model = mdl.PolynomialModel(degree=self.degree)
-        params = model.guess(self.flux[self.goodrange],
-                             x=self.wavelength[self.goodrange])
-        self.result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
+        params = model.guess(self.y[self.goodrange],
+                             x=self.x[self.goodrange])
+        self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], self.result.best_fit, 'r--x', label='Polynomial fit')
+        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Polynomial fit')
         self.plot_fit()
 
     def exponential_fit(self, event):
         self.fitregion()
         model = mdl.ExponentialModel()
-        params = model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange])
-        self.result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
+        params = model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
+        self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], self.result.best_fit, 'r--x', label='Exponential fit')
+        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Exponential fit')
         self.plot_fit()
     
     def powerlaw_fit(self, event):
         self.fitregion()
         model = mdl.PowerLawModel()
-        params = model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange])
-        self.result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
+        params = model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
+        self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], self.result.best_fit, 'r--x', label='Exponential fit')
+        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Exponential fit')
         self.plot_fit()
 
     def sine_fit(self, event):
         self.fitregion()
         model = mdl.SineModel()
-        params = model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange])
-        self.result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
+        params = model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
+        self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], self.result.best_fit, 'r--x', label='Exponential fit')
+        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Exponential fit')
         self.plot_fit()
     
     def gaussian_fit(self, event):
@@ -417,7 +427,7 @@ class App(tk.Frame):
         linear_model = mdl.LinearModel()
         if len(self.points) > 3:
             gauss_models = [mdl.GaussianModel(prefix=f'g{i}_') for i in range(len(self.gausscenter))]
-            params = linear_model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange])
+            params = linear_model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
             model = mdl.LinearModel()
             for i in range(len(gauss_models)):
                 params.update(gauss_models[i].make_params())
@@ -429,12 +439,12 @@ class App(tk.Frame):
             gauss_model = mdl.GaussianModel()
             params = gauss_model.make_params()
             params['center'].set(value=self.gausscenter)
-            params.update(gauss_model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange]))
-            params.update(linear_model.guess(self.flux[self.goodrange], x=self.wavelength[self.goodrange]))
+            params.update(gauss_model.guess(self.y[self.goodrange], x=self.x[self.goodrange]))
+            params.update(linear_model.guess(self.y[self.goodrange], x=self.x[self.goodrange]))
             model = gauss_model + linear_model
-        self.result = model.fit(self.flux[self.goodrange], params, x=self.wavelength[self.goodrange])
+        self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.wavelength[self.goodrange], self.result.best_fit, 'r--x', label='Gaussian fit')
+        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Gaussian fit')
         self.plot_fit()
 
     def exponentialgauss_fit(self, event):
