@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import lmfit.models as mdl
+from lmfit.model import save_modelresult, load_modelresult
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 from matplotlib.figure import Figure
@@ -85,6 +86,8 @@ class App(tk.Frame):
         fitmenu.add_cascade(label='Periodic Functions', menu=periodicfuncs)
         fitmenu.add_cascade(label='Peak-like Functions', menu=peaklike_funcs)
         fitmenu.add_separator()
+        fitmenu.add_command(label='Save fit as...', command=lambda: self.save_fit(self.result))
+        fitmenu.add_command(label='Load fit...', command=self.load_fit)
         fitmenu.add_command(label='Save fit report as...', command=lambda: self.save_fit_report(self.result))
         # Creating the options in the "format" drop down menu.
         self.gridvar = tk.BooleanVar()
@@ -157,8 +160,7 @@ class App(tk.Frame):
         self.vlinelist = []
         self.filename = tk.filedialog.askopenfilename(initialdir=os.listdir(),
                                                       title = 'select a file',
-                                                      filetypes = (('Data Files', '*.dat'),
-                                                                   ('All Files', '*.*')))
+                                                      filetypes = (('All Files', '*.*'),))
         self.df = pd.read_table(self.filename, delim_whitespace=True, header=None)
         self.NAME = os.path.basename(os.path.normpath(os.path.splitext(self.filename)[0]))
         self.df.name = self.NAME
@@ -202,6 +204,26 @@ class App(tk.Frame):
                                                                    ('test','*.png')])
         self.figure.savefig(save_filename, dpi=300)
 
+    def load_fit(self):
+        saved_fit = tk.filedialog.askopenfilename(initialdir=os.listdir(),
+                                                      title = 'select a file',
+                                                      filetypes = (('All Files', '*.*'),))
+        
+        self.result = load_modelresult(saved_fit)
+        self.rangemin, self.rangemax = self.result.userkws['x'][-1], self.result.userkws['x'][0]
+        self.goodregion = np.array([self.rangemin, self.rangemax])
+        self.goodrange = np.where((self.x >= self.goodregion[0]) &
+                                  (self.x <= self.goodregion[1]))
+        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Fit')
+        self.plot_fit()
+        
+    def save_fit(self, current_fit_result):
+        fit_report_filename = tk.filedialog.asksaveasfilename(initialfile='fit.sav',
+                                                              defaultextension='.sav',
+                                                              filetypes=[('All Files', '*.*')])
+        
+        save_modelresult(current_fit_result, fit_report_filename)
+        
     def save_fit_report(self, current_fit_result):
         fit_report_filename = tk.filedialog.asksaveasfilename(initialfile='fit_report.txt',
                                                               defaultextension='.txt',
