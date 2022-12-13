@@ -1,5 +1,5 @@
-# Interactive Spectra Plotting Tool (ISPT)
-This tool is created to help analyse and plot 1D spectra. Utilities for this tool (will) include the ability to edit and view the spectra data in many different ways. It also includes tools to fit a multitude of different functions using the lmfit library and some custom made default functions. (Hopefully) You can even create a custom function that it will attempt to create.
+# Interactive Plotting Tool
+This tool is created to help plot and create fits for data that has x and y values. Utilities for this tool (will) include the ability to edit and view the data in many different ways. It also includes tools to fit a multitude of different functions using the lmfit library and some custom made default functions.
 
 ## Current Features:
 - Importing a file (containing a certain data-structure) and plotting the data
@@ -11,7 +11,7 @@ This tool is created to help analyse and plot 1D spectra. Utilities for this too
 - Cut tool to cut out a piece of data
 - Normalize tools to normalize both the complete dataset, or a specific subset of the data
 
-- Fit tool that can fit three different functions:
+- Fit tool that can fit different functions:
   - Linear line fit
   - Polynomial line fit with user-specified degree of freedom/number of variables
   - Exponential fit
@@ -23,14 +23,16 @@ This tool is created to help analyse and plot 1D spectra. Utilities for this too
   - Harmonic Oscillator fit (TBD)
   - Lognormal fit (TBD)
   
+  It can also now save both the fit report as a readable file, but also the fit itself, so you can always load up the fit if you need a new figure.
+ 
 - Grid formatting option
 - Setting figure to a tight window layout
 - Setting x-axis limits
 - Setting y-axis limits
 - Setting axis labels
 
-- Documentation open button
-- Contact information for specific issues, questions or help
+- Documentation open button (TBH)
+- Contact information for specific issues, questions or help (TBD)
 
 
 ## Planned Features:
