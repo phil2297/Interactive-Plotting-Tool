@@ -607,13 +607,10 @@ class App(tk.Frame):
         self.lines = np.array(self.points)
         line_left, line_right = self.lines[0][0], self.lines[1][0]
         
-        self.df_moment = self.df[(self.x > line_left) & (self.x < line_right)]
+        df_x = self.df[self.xcol]
+        self.df_moment = self.df[(df_x > line_left) & (df_x < line_right)]
         self.profile = 1.-(self.df_moment[self.ycol]/(self.linear(self.df_moment[self.xcol], self.a, self.b)))
         M1 = np.sum(self.df_moment[self.xcol]*self.profile/self.df_moment[self.yerrcol]**2)/np.sum(self.profile/self.df_moment[self.yerrcol]**2)
-        print(self.df_moment)
-        print(self.profile)
-        print(M1)
-        print(self.lstep)
         EW = self.lstep*np.sum(self.profile)
         EWerr = self.lstep*np.sqrt(np.sum(self.df_moment[self.yerrcol]**2))
         print('Wavelength of the line:',f'{M1:.4f}','AA')
