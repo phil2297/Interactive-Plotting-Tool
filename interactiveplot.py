@@ -129,7 +129,7 @@ class App(tk.Frame):
 
         self.axes = self.figure.add_subplot()
         self.axes.step(self.x, self.y, label='Data')    
-        self.axes.plot(self.x, self.yerr, Label='y-axis error')
+        self.axes.plot(self.x, self.yerr, '--', Label='y-axis error')
         self.axes.legend()    
 
         self.figure_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH,
