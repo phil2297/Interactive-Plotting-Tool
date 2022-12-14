@@ -616,8 +616,8 @@ class App(tk.Frame):
         print(self.lstep)
         EW = self.lstep*np.sum(self.profile)
         EWerr = self.lstep*np.sqrt(np.sum(self.df_moment[self.yerrcol]**2))
-        print('Wavelength of the line:',f'{M1:.2f}','AA')
-        print('EW: ',f'{EW:.2f}','AA +/- ',f'{EWerr:.2f}','AA')
+        print('Wavelength of the line:',f'{M1:.4f}','AA')
+        print('EW: ',f'{EW:.4f}','AA +/- ',f'{EWerr:.4f}','AA')
         self.plot_fit()
         
     def equivalent_width(self):
