@@ -610,12 +610,19 @@ class App(tk.Frame):
         
         df_x = self.df[self.xcol]
         self.df_moment = self.df[(df_x > line_left) & (df_x < line_right)]
-        self.profile = 1.-((self.df_moment[self.ycol]*self.scalingfactor_y)/(self.linear((self.df_moment[self.xcol]*self.scalingfactor_y), self.a, self.b)))
-        M1 = np.sum(self.df_moment[self.xcol]*self.profile/(self.df_moment[self.yerrcol])**2)/np.sum(self.profile/(self.df_moment[self.yerrcol])**2)
+        df_moment_x = self.df_moment[self.xcol]
+        df_moment_y = self.df_moment[self.ycol]
+        df_moment_yerr = self.df_moment[self.yerrcol]
+        self.profile = 1.-((df_moment_y*self.scalingfactor_y)/(self.linear((df_moment_x*self.scalingfactor_x), self.a, self.b)))
+        M1 = np.sum((df_moment_x*self.scalingfactor_x)*self.profile/(df_moment_yerr*self.scalingfactor_y)**2)/np.sum(self.profile/(df_moment_yerr*self.scalingfactor_y)**2)
         EW = self.lstep*np.sum(self.profile)
-        EWerr = self.lstep*np.sqrt(np.sum((self.df_moment[self.yerrcol]*self.scalingfactor_y)**2))
-        print('Wavelength of the line:',f'{M1:.4f}','AA')
-        print('EW: ',f'{EW:.4f}','AA +/- ',f'{EWerr:.4f}','AA')
+        if self.scalingfactor_y == 1:
+            self.scalingfactor_yerr = EW/np.mean(df_moment_yerr) #rought automatic scaling for yerr
+        else:
+            self.scalingfactor_yerr = self.scalingfactor_y
+        EWerr = self.lstep*np.sqrt(np.sum((df_moment_yerr*self.scalingfactor_yerr)**2))
+        print('Wavelength of the line:',f'{M1:.2f}','AA')
+        print('EW: ',f'{EW:.2f}','AA +/- ',f'{EWerr:.2f}','AA')
         self.plot_fit()
         
     def equivalent_width(self):
