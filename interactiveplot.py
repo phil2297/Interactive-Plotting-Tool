@@ -12,6 +12,7 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 from matplotlib.figure import Figure
 from sklearn.preprocessing import normalize
+from scipy.optimize import curve_fit
 
 matplotlib.use('TkAgg')
 
@@ -85,6 +86,7 @@ class App(tk.Frame):
         fitmenu.add_cascade(label='Basic Functions', menu=basefuncs)
         fitmenu.add_cascade(label='Periodic Functions', menu=periodicfuncs)
         fitmenu.add_cascade(label='Peak-like Functions', menu=peaklike_funcs)
+        fitmenu.add_command(label='Equivalent Width', command=self.choose_EW)
         fitmenu.add_separator()
         fitmenu.add_command(label='Save fit as...', command=lambda: self.save_fit(self.result))
         fitmenu.add_command(label='Load fit...', command=self.load_fit)
@@ -134,6 +136,8 @@ class App(tk.Frame):
         self.toolbar.pack(side=tk.BOTTOM, fill=tk.BOTH)
 
     def reset(self, event):
+        """Function to reset all the parameters and changes made to the plot.
+        """
         print('Resetting...')
         self.gridvar.set(False)
         self.figure_canvas.get_tk_widget().destroy()
@@ -143,6 +147,7 @@ class App(tk.Frame):
         self.points = []
         self.x = np.array(self.df[self.xcol]).copy()*self.scalingfactor_x
         self.y = np.array(self.df[self.ycol]).copy()*self.scalingfactor_y
+        self.yerr = np.array(self.df[self.yerrcol]).copy()*self.scalingfactor_y
         self.draw_figure(master=self.master)
     
 
@@ -177,34 +182,43 @@ class App(tk.Frame):
                 self.scalingfactor_y = 1
                 
             self.xcol, self.ycol = int(options_ents['ent_2'].get()), int(options_ents['ent_3'].get())
+            self.yerrcol = int(options_ents['ent_4'].get())
             options_window.destroy()
             options_window.update()
             self.x = np.array(self.df[self.xcol]).copy()*self.scalingfactor_x
             self.y = np.array(self.df[self.ycol]).copy()*self.scalingfactor_y
+            self.yerr = np.array(self.df[self.yerrcol].copy())*self.scalingfactor_y
             self.draw_figure(master=self.master)
             
     
-        options_window = self.pop_up_window('File options', '375x150', create_data,
+        options_window = self.pop_up_window('File options', '375x200', create_data,
                                     label1='X-axis scaling factor (leave blank if none):',
                                     label2='Y-axis scaling factor (leave blank if none):',
                                     label3=f'Choose x-axis data column [0-{self.column_amt-1}]:',
-                                    label4=f'Choose y-axis data column [0-{self.column_amt-1}]:')
+                                    label4=f'Choose y-axis data column [0-{self.column_amt-1}]:',
+                                    label5=f'Choose y-error data column [0-{self.column_amt-1}]:')
         options_window, options_ents = options_window
         
     def open_files(self):
         pass
 
     def save_plot(self):
-        self.figure.savefig(f'{self.NAME}.png', dpi=300)
+        """Saves figure in the active script folder with filename as name
+        """
+        self.figure.savefig(f'{self.NAME}.pdf')
 
     def save_plot_as(self):
-        save_filename = tk.filedialog.asksaveasfilename(initialfile='Untitled.png',
-                                                        defaultextension='.png',
+        """Saves the current plot as user selected filename in user selected folder.
+        """
+        save_filename = tk.filedialog.asksaveasfilename(initialfile='Untitled.pdf',
+                                                        defaultextension='.pdf',
                                                         filetypes=[('All Files', '*.*'),
                                                                    ('test','*.png')])
         self.figure.savefig(save_filename, dpi=300)
 
     def load_fit(self):
+        """Loads saved fit result JSON from file.
+        """
         saved_fit = tk.filedialog.askopenfilename(initialdir=os.listdir(),
                                                       title = 'select a file',
                                                       filetypes = (('All Files', '*.*'),))
@@ -218,6 +232,11 @@ class App(tk.Frame):
         self.plot_fit()
         
     def save_fit(self, current_fit_result):
+        """Saves the current fit as a JSON computer-readable file.
+
+        Args:
+            current_fit_result (ModelResult): result from currently fitted model.
+        """
         fit_report_filename = tk.filedialog.asksaveasfilename(initialfile='fit.sav',
                                                               defaultextension='.sav',
                                                               filetypes=[('All Files', '*.*')])
@@ -225,6 +244,11 @@ class App(tk.Frame):
         save_modelresult(current_fit_result, fit_report_filename)
         
     def save_fit_report(self, current_fit_result):
+        """Saves the fit report to a user readable .txt file.
+
+        Args:
+            current_fit_result (ModelResult): current model result to create a fit report from.
+        """
         fit_report_filename = tk.filedialog.asksaveasfilename(initialfile='fit_report.txt',
                                                               defaultextension='.txt',
                                                               filetypes=[('All Files', '*.*')])
@@ -233,9 +257,13 @@ class App(tk.Frame):
 
     # EDIT MENU
     def zoom(self):
+        """Implements the toolbar zoom to a custom button.
+        """
         self.figure_canvas.mpl_connect('button_release_event', self.toolbar.zoom)
 
     def smooth_data(self):
+        """Smooths the data using box smoothing.
+        """
         self.initialize_fit_frame()
         def smooth():
             box_pts = int(smooth_ent[f'ent_{0}'].get())
@@ -253,6 +281,8 @@ class App(tk.Frame):
         smoothwindow, smooth_ent = smooth_window
         
     def cut_data(self):
+        """Cuts a user-selected set of data from the plot.
+        """
         self.initialize_fit_frame()
         def cut(event):
             self.fitregion()
@@ -260,24 +290,29 @@ class App(tk.Frame):
             self.x = np.delete(self.x, self.goodrange)
             self.line_removal()
             self.draw_figure(master=self.fitwindow)
-            self.fitwindow.focus_set()   
+            self.fitwindow.focus_set()
         self.fitwindow.bind('<Return>', cut)
 
     def normalize_data(self):
+        """Normalizes the full data_set then resets the y_values after drawing it.
+        """
         self.initialize_fit_frame()
         self.y = normalize(self.y.reshape(1, -1))[0]
         self.draw_figure(master=self.fitwindow)
-        self.y = np.array(self.df[self.ycol])
+        self.y = np.array(self.df[self.ycol].copy())*self.scalingfactor_y
         self.fitwindow.focus_set()
     
     def normalize_section(self):
+        """Normalizes a section of the data using sklearn preprocessing. The area is chosen by
+        marking vertical lines at the x-axis limits.
+        """
         self.initialize_fit_frame()
         def norm(event):
             self.fitregion()
             self.y[self.goodrange] = normalize(self.y[self.goodrange].reshape(1, -1))[0]
             self.line_removal()
             self.draw_figure(master=self.fitwindow)
-            self.y = np.array(self.df[self.ycol]).copy()
+            self.y = np.array(self.df[self.ycol]).copy()*self.scalingfactor_y
             self.fitwindow.focus_set()    
         self.fitwindow.bind('<Return>', norm)
 
@@ -293,12 +328,16 @@ class App(tk.Frame):
         self.figure_canvas.draw()
 
     def line_removal(self):
+        """Removes all vertical lines on the plot and resets their respective stored values.
+        """
         for i in range(len(self.vlinelist)): 
             self.vlinelist.pop(0).remove()
             self.lines = np.delete(self.lines, 0)
             self.points.pop(0)
 
     def set_xlims(self, event):
+        """Sets the x-axis limits for plotting purposes from the two fit function limits.
+        """
         if len(self.points) > 1 and len(self.points) <= 2:
             xlimmin, xlimmax = self.points[0][0], self.points[1][0]
             self.axes.set_xlim(xlimmin-0.01*xlimmin,
@@ -307,6 +346,8 @@ class App(tk.Frame):
         self.figure_canvas.draw()
 
     def fitregion(self):
+        """Determines the limits on the x-axis of where to fit, based on user chosen lines.
+        """
         self.lines = np.array(self.points)
         if self.lines[0][0] < self.lines[1][0]:
             self.rangemin = self.lines[0][0]
@@ -319,6 +360,9 @@ class App(tk.Frame):
                                   (self.x <= self.goodregion[1]))
 
     def initialize_fit_frame(self):
+        """Initializes the frame that is used for fitting, drawing the vertical lines for choosing the fit
+        and for visualising the fit onto the data.
+        """
         try:
             self.fitwindow.destroy()
             self.fitwindow.focus_set()
@@ -337,10 +381,14 @@ class App(tk.Frame):
 
         # Functions to map to buttons choosing fit type
     def choose_linear(self):
+        """Initializes the linear fit.
+        """
         self.initialize_fit_frame()
         self.fitwindow.bind('<Return>', self.linear_fit)
 
     def choose_polynomial(self):
+        """Initializes the polynomial fit.
+        """
         self.initialize_fit_frame() 
         def update_degree():
             self.degree = int(polyent[f'ent_{0}'].get())
@@ -353,18 +401,26 @@ class App(tk.Frame):
         self.fitwindow.bind('<Return>', self.polynomial_fit)
 
     def choose_exponential(self):
+        """Initializes the exponential fit.
+        """
         self.initialize_fit_frame()
         self.fitwindow.bind('<Return>', self.exponential_fit)
     
     def choose_powerlaw(self):
+        """Initializes the powerlaw fit.
+        """
         self.initialize_fit_frame()
         self.fitwindow.bind('<Return>', self.powerlaw_fit)
     
     def choose_sine(self):
+        """Initializes the sinusodial fit.
+        """
         self.initialize_fit_frame()
         self.fitwindow.bind('<Return>', self.sine_fit)
 
     def choose_gauss(self):
+        """Initializes the gaussian fit.
+        """
         self.initialize_fit_frame()
         self.fitwindow.bind('<Return>', self.gaussian_fit)
     
@@ -380,6 +436,11 @@ class App(tk.Frame):
     def choose_lognormal(self):
         self.dummy()
     
+    def choose_EW(self):
+        """Initializes the equivalent width calculation/fitting
+        """
+        self.initialize_fit_frame()
+        self.equivalent_width()
     
     def plot_fit(self):
         self.line_removal()
@@ -412,6 +473,8 @@ class App(tk.Frame):
         self.plot_fit()
 
     def exponential_fit(self, event):
+        """Fits an exponential function to the data given user selected x-axis limits.
+        """
         self.fitregion()
         model = mdl.ExponentialModel()
         params = model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
@@ -421,6 +484,8 @@ class App(tk.Frame):
         self.plot_fit()
     
     def powerlaw_fit(self, event):
+        """Fits a powerlaw to the data given user selected x-axis limits.
+        """
         self.fitregion()
         model = mdl.PowerLawModel()
         params = model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
@@ -430,6 +495,8 @@ class App(tk.Frame):
         self.plot_fit()
 
     def sine_fit(self, event):
+        """Fits a sine function to the data given user selected x-axis limits.
+        """
         self.fitregion()
         model = mdl.SineModel()
         params = model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
@@ -482,6 +549,87 @@ class App(tk.Frame):
         pass
     
     
+    # The following functions are all used to calculate the equivalent width
+    def linear(self, x, a, b):
+        """Creates a linear line.
+
+        Args:
+            x (int, float, array): input value or array
+            a (int, float): slope coefficient
+            b (int, float): y intersect coefficient
+
+        Returns:
+            int, float, array: y value(s) for the linear line
+        """
+        return a*x + b
+            
+    def choose_line(self, event):
+        """Function to select a line to calculate the equivalent width on.
+        Zooms into the area around the line too.
+        """
+        self.lines = np.array(self.points)
+        self.selected_line = self.lines[0][0]
+        self.axes.set_xlim(self.selected_line-self.normrange, self.selected_line+self.normrange)
+        self.plot_fit()
+        self.fitwindow.bind('<Return>', self.choose_normalization)
+    
+    def choose_normalization(self, event):
+        """Function to select areas around the line to normalize to, then normalizes.
+        Zooms into the newly normalized area.
+        """
+        self.lines = np.array(self.points)
+        norm_left1, norm_left2 = self.lines[0][0], self.lines[1][0]
+        norm_right1, norm_right2 = self.lines[2][0], self.lines[3][0]
+        df_x = self.df[self.xcol]
+        df_norm_fit = self.df[(df_x > norm_left1) & (df_x < norm_left2) | (df_x > norm_right1) & (df_x < norm_right2)]
+        param_guess = [0., 1.]
+        print(df_norm_fit)
+        val, cov = curve_fit(self.linear, df_norm_fit[self.xcol], df_norm_fit[self.ycol],
+                                p0=param_guess)
+        self.a, self.b = val[0], val[1]
+        self.norm = self.y/(self.linear(df_x, self.a, self.b))
+        self.normerr = self.yerr/(self.linear(df_x, self.a, self.b))
+        self.y = np.array(self.norm)
+        self.yerr = np.array(self.normerr)
+        self.plot_fit()
+        self.initialize_fit_frame()
+        minx, maxx = self.selected_line - self.normrange, self.selected_line + self.normrange
+        self.axes.set_xlim(minx, maxx)
+        minyidx = int(np.where(np.abs(self.x-(minx))==np.abs(self.x-(minx)).min())[0])
+        maxyidx = int(np.where(np.abs(self.x-(maxx))==np.abs(self.x-(maxx)).min())[0])
+        miny, maxy = 0.95*self.y[minyidx], 1.05*self.y[maxyidx]
+        self.axes.set_ylim(miny, maxy)
+        self.fitwindow.bind('<Return>', self.choose_line_area)
+            
+    def choose_line_area(self, event):
+        """Function to choose the edges of the selected line, then calculates the equivalent width.
+        """
+        self.lines = np.array(self.points)
+        line_left, line_right = self.lines[0][0], self.lines[1][0]
+        
+        self.df_moment = self.df[(self.x > line_left) & (self.x < line_right)]
+        self.profile = 1.-(self.df_moment[self.ycol]/(self.linear(self.df_moment[self.xcol], self.a, self.b)))
+        M1 = np.sum(self.df_moment[self.xcol]*self.profile/self.df_moment[self.yerrcol]**2)/np.sum(self.profile/self.df_moment[self.yerrcol]**2)
+        print(self.df_moment)
+        print(self.profile)
+        print(M1)
+        print(self.lstep)
+        EW = self.lstep*np.sum(self.profile)
+        EWerr = self.lstep*np.sqrt(np.sum(self.df_moment[self.yerrcol]**2))
+        print('Wavelength of the line:',f'{M1:.2f}','AA')
+        print('EW: ',f'{EW:.2f}','AA +/- ',f'{EWerr:.2f}','AA')
+        self.plot_fit()
+        
+    def equivalent_width(self):
+        """Calculates the equivalent width using the functions choose_line,
+        choose_normalization and choose_line_area
+        """
+        self.normrange = 100.
+        self.lstep = self.x[1]-self.x[0]
+        self.fitwindow.bind('<Return>', self.choose_line)
+
+        
+        
     # FORMAT MENU
     def pop_up_window(self, title, windowsize, updatefunc, **labels):
         """Template function to create a pop up, two-fielded writable
