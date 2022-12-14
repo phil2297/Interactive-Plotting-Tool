@@ -597,7 +597,7 @@ class App(tk.Frame):
         self.axes.set_xlim(minx, maxx)
         minyidx = int(np.where(np.abs(self.x-(minx))==np.abs(self.x-(minx)).min())[0])
         maxyidx = int(np.where(np.abs(self.x-(maxx))==np.abs(self.x-(maxx)).min())[0])
-        miny, maxy = 0.95*self.y[minyidx], 1.05*self.y[maxyidx]
+        miny, maxy = 0.5*self.y[minyidx], 1.5*self.y[maxyidx]
         self.axes.set_ylim(miny, maxy)
         self.fitwindow.bind('<Return>', self.choose_line_area)
             
