@@ -23,7 +23,8 @@ This tool is created to help plot and create fits for data that has x and y valu
   - Harmonic Oscillator fit (TBD)
   - Lognormal fit (TBD)
   
-  It can also now save both the fit report as a readable file, but also the fit itself, so you can always load up the fit if you need a new figure.
+  - Calculate the Equivalent Width of a line
+  It can save both the fit report as a user-readable file, but also the fit itself, so you can always load up the fit if you need a new figure.
  
 - Grid formatting option
 - Setting figure to a tight window layout
