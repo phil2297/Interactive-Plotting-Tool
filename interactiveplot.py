@@ -584,8 +584,9 @@ class App(tk.Frame):
         df_norm_fit = self.df[(df_x > norm_left1) & (df_x < norm_left2) | (df_x > norm_right1) & (df_x < norm_right2)]
         param_guess = [0., 1.]
         print(df_norm_fit)
-        val, cov = curve_fit(self.linear, df_norm_fit[self.xcol], df_norm_fit[self.ycol],
-                                p0=param_guess)
+        val, cov = curve_fit(self.linear, df_norm_fit[self.xcol]*self.scalingfactor_x, 
+                             df_norm_fit[self.ycol]*self.scalingfactor_y,
+                            p0=param_guess)
         self.a, self.b = val[0], val[1]
         self.norm = self.y/(self.linear(df_x, self.a, self.b))
         self.normerr = self.yerr/(self.linear(df_x, self.a, self.b))
@@ -609,10 +610,10 @@ class App(tk.Frame):
         
         df_x = self.df[self.xcol]
         self.df_moment = self.df[(df_x > line_left) & (df_x < line_right)]
-        self.profile = 1.-(self.df_moment[self.ycol]/(self.linear(self.df_moment[self.xcol], self.a, self.b)))
-        M1 = np.sum(self.df_moment[self.xcol]*self.profile/self.df_moment[self.yerrcol]**2)/np.sum(self.profile/self.df_moment[self.yerrcol]**2)
+        self.profile = 1.-((self.df_moment[self.ycol]*self.scalingfactor_y)/(self.linear((self.df_moment[self.xcol]*self.scalingfactor_y), self.a, self.b)))
+        M1 = np.sum(self.df_moment[self.xcol]*self.profile/(self.df_moment[self.yerrcol])**2)/np.sum(self.profile/(self.df_moment[self.yerrcol])**2)
         EW = self.lstep*np.sum(self.profile)
-        EWerr = self.lstep*np.sqrt(np.sum(self.df_moment[self.yerrcol]**2))
+        EWerr = self.lstep*np.sqrt(np.sum((self.df_moment[self.yerrcol]*self.scalingfactor_y)**2))
         print('Wavelength of the line:',f'{M1:.4f}','AA')
         print('EW: ',f'{EW:.4f}','AA +/- ',f'{EWerr:.4f}','AA')
         self.plot_fit()
