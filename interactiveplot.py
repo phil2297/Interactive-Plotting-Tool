@@ -63,6 +63,7 @@ class App(tk.Frame):
         editmenu.add_command(label='Zoom', command=self.zoom)
         editmenu.add_command(label='Smooth', command=self.smooth_data)
         editmenu.add_command(label='Cut', command=self.cut_data)
+        editmenu.add_command(label='Change data color', command=self.color_change)
         editmenu.add_separator()
         normalizemenu = tk.Menu(editmenu, tearoff=False)
         normalizemenu.add_command(label='Normalize full data', command=self.normalize_data)
@@ -658,7 +659,7 @@ class App(tk.Frame):
         lbls, ents = {}, {}
         
         # Create the window itself.
-        popupwindow = tk.Toplevel()
+        popupwindow = tk.Toplevel(takefocus=True, highlightbackground='#fff', highlightcolor='#fff')
         popupwindow.title(title)
         popupwindow.geometry(windowsize)
         popupwindow.columnconfigure([0, 1], minsize=25, weight=1)
