@@ -659,13 +659,13 @@ class App(tk.Frame):
         lbls, ents = {}, {}
         
         # Create the window itself.
-        popupwindow = tk.Toplevel(takefocus=True, highlightbackground='#fff', highlightcolor='#fff')
+        popupwindow = tk.Toplevel(takefocus=True, background='#fff')
         popupwindow.title(title)
         popupwindow.geometry(windowsize)
         popupwindow.columnconfigure([0, 1], minsize=25, weight=1)
         popupwindow.rowconfigure(list(row_amount), minsize=25, weight=1)
         for i in range(len(row_amount)-1):
-            lbls[f'lbl_{i}'] = tk.Label(master=popupwindow, text=labels[f'label{i+1}'])
+            lbls[f'lbl_{i}'] = tk.Label(master=popupwindow, text=labels[f'label{i+1}'], background='#fff')
             ents[f'ent_{i}'] = tk.Entry(master=popupwindow)
         
         # Creating the submit button.
