@@ -1,5 +1,6 @@
 import os
 import tkinter as tk
+from tkinter import ttk
 import webbrowser
 
 import matplotlib
@@ -34,7 +35,7 @@ class App(tk.Frame):
         window = tk.Toplevel(self)
         window.title('DUMMY')
         window.geometry('300x30')
-        lbl_dummy = tk.Label(master=window, text='BUTTON NOT IMPLEMENTED')
+        lbl_dummy = ttk.Label(master=window, text='BUTTON NOT IMPLEMENTED')
         lbl_dummy.pack()
 
     def menu_bar(self):
@@ -666,11 +667,11 @@ class App(tk.Frame):
         popupwindow.columnconfigure([0, 1], minsize=25, weight=1)
         popupwindow.rowconfigure(list(row_amount), minsize=25, weight=1)
         for i in range(len(row_amount)-1):
-            lbls[f'lbl_{i}'] = tk.Label(master=popupwindow, text=labels[f'label{i+1}'], background='#fff')
-            ents[f'ent_{i}'] = tk.Entry(master=popupwindow)
+            lbls[f'lbl_{i}'] = ttk.Label(master=popupwindow, text=labels[f'label{i+1}'], background='#fff')
+            ents[f'ent_{i}'] = ttk.Entry(master=popupwindow)
         
         # Creating the submit button.
-        btn_submit = tk.Button(master=popupwindow, text='Submit',
+        btn_submit = ttk.Button(master=popupwindow, text='Submit',
                                command=updatefunc)
 
         # Setting up prompt and entry field positions.
@@ -740,6 +741,7 @@ class App(tk.Frame):
                                            size=float(label_ents[f'ent_{2}'].get()))
             y_label = self.axes.set_ylabel(label_ents[f'ent_{1}'].get(),
                                            size=float(label_ents[f'ent_{2}'].get()))
+            self.axes.legend(fontsize=float(label_ents[f'ent_{2}'].get())/(float(label_ents[f'ent_{2}'].get())/2))
             self.figure_canvas.draw()
 
             labelwindow.destroy()
@@ -765,9 +767,9 @@ class App(tk.Frame):
         contact_window.columnconfigure(0, minsize=25, weight=1)
         contact_window.rowconfigure([0, 1], minsize=25, weight=1)
 
-        lbl_contact = tk.Label(text='Contact at: ', anchor=tk.CENTER,
+        lbl_contact = ttk.Label(text='Contact at: ', anchor=tk.CENTER,
                                font=('Helvetica', 14), master=contact_window)
-        lbl_email = tk.Label(text='phdupont00@gmail.com ', anchor=tk.CENTER,
+        lbl_email = ttk.Label(text='phdupont00@gmail.com ', anchor=tk.CENTER,
                                font=('Helvetica', 14), master=contact_window)
         lbl_contact.grid(row=0, column=0)
         lbl_email.grid(row=1, column=0)
