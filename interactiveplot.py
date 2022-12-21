@@ -24,6 +24,7 @@ class App(tk.Frame):
         the window construct."""
         tk.Frame.__init__(self, master)
         self.master = master
+        self.datacolorvar = tk.StringVar(master=self.master)
         self.master.title('Absorption/Emission line fitter')
 
     def dummy(self):
@@ -128,9 +129,9 @@ class App(tk.Frame):
         self.toolbar = NavigationToolbar2Tk(self.figure_canvas, master, pack_toolbar=False)
         self.toolbar.update()
 
-        self.colorvar = tk.StringVar(master, 'blue')
         self.axes = self.figure.add_subplot()
-        self.axes.step(self.x, self.y, label='Data', color=self.colorvar.get())    
+        data_color = self.datacolorvar.get()
+        self.axes.step(self.x, self.y, label='Data', color=data_color)    
         self.axes.plot(self.x, self.yerr, '--', label='y-axis error')
         self.axes.legend()    
 
@@ -190,6 +191,7 @@ class App(tk.Frame):
             self.x = np.array(self.df[self.xcol]).copy()*self.scalingfactor_x
             self.y = np.array(self.df[self.ycol]).copy()*self.scalingfactor_y
             self.yerr = np.array(self.df[self.yerrcol].copy())*self.scalingfactor_y
+            self.datacolorvar.set('blue')
             self.draw_figure(master=self.master)
             
     
@@ -298,13 +300,12 @@ class App(tk.Frame):
 
     def color_change(self):
         def choose_color():
-            self.colorvar.set(colorchange_ent.get())
-            self.figure_canvas.draw()
-
+            self.datacolorvar.set(colorchange_ent['ent_0'].get())
+            self.draw_figure(master=self.master)
             colorchangewindow.destroy()
             colorchangewindow.update()
         colorchangewindow, colorchange_ent = self.pop_up_window('Choose plot color',
-                                                                '100x100',
+                                                                '500x75',
                                                                 choose_color,
                                                                 label1='choose matplotlib compatible color [color name/hex code]')
         
