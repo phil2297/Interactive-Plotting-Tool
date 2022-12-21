@@ -167,7 +167,9 @@ class App(tk.Frame):
         self.vlinelist = []
         self.filename = tk.filedialog.askopenfilename(initialdir=os.listdir(),
                                                       title = 'select a file',
-                                                      filetypes = [('All Files', '*.*')])
+                                                      filetypes = [('All Files', '*.*'),
+                                                                   ('Fits files, *.fits'),
+                                                                   ('Dat files, *.dat')])
         self.df = pd.read_table(self.filename, delim_whitespace=True, header=None)
         self.NAME = os.path.basename(os.path.normpath(os.path.splitext(self.filename)[0]))
         self.df.name = self.NAME
