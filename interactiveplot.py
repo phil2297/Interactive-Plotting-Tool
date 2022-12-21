@@ -127,8 +127,9 @@ class App(tk.Frame):
         self.toolbar = NavigationToolbar2Tk(self.figure_canvas, master, pack_toolbar=False)
         self.toolbar.update()
 
+        self.colorvar = tk.StringVar()
         self.axes = self.figure.add_subplot()
-        self.axes.step(self.x, self.y, label='Data')    
+        self.axes.step(self.x, self.y, label='Data', color=self.colorvar)    
         self.axes.plot(self.x, self.yerr, '--', label='y-axis error')
         self.axes.legend()    
 
@@ -166,7 +167,7 @@ class App(tk.Frame):
         self.vlinelist = []
         self.filename = tk.filedialog.askopenfilename(initialdir=os.listdir(),
                                                       title = 'select a file',
-                                                      filetypes = (('All Files', '*.*'),))
+                                                      filetypes = [('All Files', '*.*')])
         self.df = pd.read_table(self.filename, delim_whitespace=True, header=None)
         self.NAME = os.path.basename(os.path.normpath(os.path.splitext(self.filename)[0]))
         self.df.name = self.NAME
@@ -257,6 +258,7 @@ class App(tk.Frame):
             fr.write(current_fit_result.fit_report())
 
     # EDIT MENU
+        
     def zoom(self):
         """Implements the toolbar zoom to a custom button.
         """
@@ -294,6 +296,18 @@ class App(tk.Frame):
             self.fitwindow.focus_set()
         self.fitwindow.bind('<Return>', cut)
 
+    def color_change(self):
+        def choose_color():
+            self.colorvar.set(colorchange_ent.get())
+            self.figure_canvas.draw()
+
+            colorchangewindow.destroy()
+            colorchangewindow.update()
+        colorchangewindow, colorchange_ent = self.pop_up_window('Choose plot color',
+                                                                '100x100',
+                                                                choose_color,
+                                                                label1='choose matplotlib compatible color [color name/hex code]')
+        
     def normalize_data(self):
         """Normalizes the full data_set then resets the y_values after drawing it.
         """
