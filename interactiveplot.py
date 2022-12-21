@@ -127,7 +127,7 @@ class App(tk.Frame):
         self.toolbar = NavigationToolbar2Tk(self.figure_canvas, master, pack_toolbar=False)
         self.toolbar.update()
 
-        self.colorvar = tk.StringVar()
+        self.colorvar = tk.StringVar('blue')
         self.axes = self.figure.add_subplot()
         self.axes.step(self.x, self.y, label='Data', color=self.colorvar)    
         self.axes.plot(self.x, self.yerr, '--', label='y-axis error')
@@ -166,10 +166,7 @@ class App(tk.Frame):
         self.points = []
         self.vlinelist = []
         self.filename = tk.filedialog.askopenfilename(initialdir=os.listdir(),
-                                                      title = 'select a file',
-                                                      filetypes = [('All Files', '*.*'),
-                                                                   ('Fits files, *.fits'),
-                                                                   ('Dat files, *.dat')])
+                                                      title = 'select a file')
         self.df = pd.read_table(self.filename, delim_whitespace=True, header=None)
         self.NAME = os.path.basename(os.path.normpath(os.path.splitext(self.filename)[0]))
         self.df.name = self.NAME
