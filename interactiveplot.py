@@ -127,7 +127,7 @@ class App(tk.Frame):
         self.toolbar = NavigationToolbar2Tk(self.figure_canvas, master, pack_toolbar=False)
         self.toolbar.update()
 
-        self.colorvar = tk.StringVar('blue')
+        self.colorvar = tk.StringVar(master, 'blue')
         self.axes = self.figure.add_subplot()
         self.axes.step(self.x, self.y, label='Data', color=self.colorvar)    
         self.axes.plot(self.x, self.yerr, '--', label='y-axis error')
