@@ -129,7 +129,7 @@ class App(tk.Frame):
 
         self.colorvar = tk.StringVar(master, 'blue')
         self.axes = self.figure.add_subplot()
-        self.axes.step(self.x, self.y, label='Data', color=self.colorvar)    
+        self.axes.step(self.x, self.y, label='Data', color=self.colorvar.get())    
         self.axes.plot(self.x, self.yerr, '--', label='y-axis error')
         self.axes.legend()    
 
