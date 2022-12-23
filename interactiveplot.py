@@ -1,4 +1,5 @@
 import os
+import sys
 import tkinter as tk
 from tkinter import ttk
 import webbrowser
@@ -24,6 +25,9 @@ class App(tk.Frame):
         """Initializing the frame in which things are created onto in
         the window construct."""
         tk.Frame.__init__(self, master)
+        operating_system = sys.platform()
+        if operating_system == 'darwin':
+            ttk.style.use('aqua')
         self.master = master
         self.plottypevar = tk.StringVar(master=self.master)
         self.datacolorvar = tk.StringVar(master=self.master)
