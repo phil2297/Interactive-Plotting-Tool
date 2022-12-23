@@ -18,22 +18,24 @@ from scipy.optimize import curve_fit
 
 matplotlib.use('TkAgg')
 
-
 class App(tk.Frame):
     # Essentials
     def __init__(self, master):
         """Initializing the frame in which things are created onto in
         the window construct."""
         tk.Frame.__init__(self, master)
-        operating_system = sys.platform()
+        operating_system = sys.platform
         if operating_system == 'darwin':
             ttk.style.use('aqua')
         self.master = master
         self.plottypevar = tk.StringVar(master=self.master)
         self.datacolorvar = tk.StringVar(master=self.master)
         self.yerrcolorvar = tk.StringVar(master=self.master)
+        self.fitcolorvar = tk.StringVar(master=self.master)
         self.styles = [style for style in plt.style.available]
         self.stylevar = tk.StringVar(master=self.master)
+        self.fitactivevar = tk.BooleanVar(master=self.master)
+        self.fittypevar = tk.StringVar(master=self.master)
         self.master.title('Absorption/Emission line fitter')
 
     def dummy(self):
@@ -135,6 +137,7 @@ class App(tk.Frame):
             self.toolbar.destroy()
         except:
             pass
+        plt.style.use(self.stylevar.get())  
         self.figure = Figure(figsize=(6, 4), dpi=100)
         self.figure_canvas = FigureCanvasTkAgg(self.figure, master=master)
         self.figure_canvas.draw()
@@ -144,7 +147,6 @@ class App(tk.Frame):
         self.axes = self.figure.add_subplot()
         data_color = self.datacolorvar.get()
         yerr_color = self.yerrcolorvar.get()
-        plt.style.use(self.stylevar.get())
         self.axes.step(self.x, self.y, label='Data', color=data_color)    
         self.axes.plot(self.x, self.yerr, '--', label='y-error', color=yerr_color)
         self.axes.legend()    
@@ -163,6 +165,7 @@ class App(tk.Frame):
         self.fitwindow.destroy()
         self.vlinelist = []
         self.points = []
+        self.fitactivevar.set(False)
         self.x = np.array(self.df[self.xcol]).copy()*self.scalingfactor_x
         self.y = np.array(self.df[self.ycol]).copy()*self.scalingfactor_y
         self.yerr = np.array(self.df[self.yerrcol]).copy()*self.scalingfactor_y
@@ -207,7 +210,9 @@ class App(tk.Frame):
             self.yerr = np.array(self.df[self.yerrcol].copy())*self.scalingfactor_y
             self.datacolorvar.set('blue')
             self.yerrcolorvar.set('green')
+            self.fitcolorvar.set('red')
             self.stylevar.set('default')
+            self.fitactivevar.set(False)
             self.draw_figure(master=self.master)
             
     
@@ -317,19 +322,41 @@ class App(tk.Frame):
     def color_change(self):
         def choose_color():
             dat_col = colorchange_ent['ent_0'].get()
-            yerr_col = colorchange_ent['ent_1'].get()
+            yerr_col = colorchange_ent['ent_1'].get() 
+            if self.fitcolorvar.get():
+                fit_col = colorchange_ent['ent_2'].get()
+                self.fitcolorvar.set(fit_col)
+                
             if dat_col:
                 self.datacolorvar.set(dat_col)
+                
             if yerr_col:
                 self.yerrcolorvar.set(yerr_col)
-            self.draw_figure(master=self.master)
+            
+            if self.fitactivevar.get():
+                self.temp_save_fit(self.result)
+                self.initialize_fit_frame()
+                self.temp_load_fit(self.tempfitfile)
+            else:
+                self.draw_figure(master=self.master)
+                
             colorchangewindow.destroy()
             colorchangewindow.update()
-        colorchangewindow, colorchange_ent = self.pop_up_window('Choose plot color',
-                                                                '300x75',
+            
+        if self.fitcolorvar.get():
+            colorchangewindow, colorchange_ent = self.pop_up_window('Choose plot color',
+                                                                '300x100',
                                                                 choose_color,
                                                                 label1='Data color [color name/hex code]',
-                                                                label2='Y-error color [color name/hex code]')
+                                                                label2='Y-error color [color name/hex code]',
+                                                                label3='Fit color [color name/hex code]')
+        else:
+            colorchangewindow, colorchange_ent = self.pop_up_window('Choose plot color',
+                                                                    '300x75',
+                                                                    choose_color,
+                                                                    label1='Data color [color name/hex code]',
+                                                                    label2='Y-error color [color name/hex code]')
+
       
     def style_change(self):
         print(self.styles)
@@ -337,7 +364,14 @@ class App(tk.Frame):
             style = stylechange_ent['ent_0'].get()
             if style:
                 self.stylevar.set(style)
-            self.draw_figure(master=self.master)
+                
+            if self.fitactivevar.get():
+                self.temp_save_fit(self.result)
+                self.initialize_fit_frame()
+                self.temp_load_fit(self.tempfitfile)
+            else:
+                self.draw_figure(master=self.master)
+                
             stylechangewindow.destroy()
             stylechangewindow.update()
         stylechangewindow, stylechange_ent = self.pop_up_window('Choose matplotlib style',
@@ -434,12 +468,15 @@ class App(tk.Frame):
     def choose_linear(self):
         """Initializes the linear fit.
         """
+        self.fitactivevar.set(True)
         self.initialize_fit_frame()
+        print(self.fitactivevar.get())
         self.fitwindow.bind('<Return>', self.linear_fit)
 
     def choose_polynomial(self):
         """Initializes the polynomial fit.
         """
+        self.fitactivevar.set(True)
         self.initialize_fit_frame() 
         def update_degree():
             self.degree = int(polyent[f'ent_{0}'].get())
@@ -454,12 +491,14 @@ class App(tk.Frame):
     def choose_exponential(self):
         """Initializes the exponential fit.
         """
+        self.fitactivevar.set(True)
         self.initialize_fit_frame()
         self.fitwindow.bind('<Return>', self.exponential_fit)
     
     def choose_powerlaw(self):
         """Initializes the powerlaw fit.
         """
+        self.fitactivevar.set(True)
         self.initialize_fit_frame()
         self.fitwindow.bind('<Return>', self.powerlaw_fit)
     
@@ -472,33 +511,64 @@ class App(tk.Frame):
     def choose_gauss(self):
         """Initializes the gaussian fit.
         """
+        self.fitactivevar.set(True)
         self.initialize_fit_frame()
         self.fitwindow.bind('<Return>', self.gaussian_fit)
     
     def choose_exponentialgauss(self):
-        self.dummy()
+        """Initializes the exponential gaussian fit"""
+        self.fitactivevar.set(True)
+        self.initialize_fit_frame()
+        self.fitwindow.bind('<Return>', self.exponentialgauss_fit)
         
     def choose_lorentzian(self):
-        self.dummy()
+        """Initializes the exponential gaussian fit"""
+        self.fitactivevar.set(True)
+        self.initialize_fit_frame()
+        self.fitwindow.bind('<Return>', self.lorentzian_fit)
         
     def choose_harmonicoscillator(self):
-        self.dummy()
+        """Initializes the exponential gaussian fit"""
+        self.fitactivevar.set(True)
+        self.initialize_fit_frame()
+        self.fitwindow.bind('<Return>', self.harmonicoscillator_fit)
         
     def choose_lognormal(self):
-        self.dummy()
+        """Initializes the exponential gaussian fit"""
+        self.fitactivevar.set(True)
+        self.initialize_fit_frame()
+        self.fitwindow.bind('<Return>', self.lognormal_fit)
     
     def choose_EW(self):
         """Initializes the equivalent width calculation/fitting
         """
+        self.fitactivevar.set(True)
         self.initialize_fit_frame()
         self.equivalent_width()
     
     def plot_fit(self):
+        fit_color = self.fitcolorvar.get()
+        fit_type = self.fittypevar.get()
+        self.axes.plot(self.x[self.goodrange], self.result.best_fit, '--x',
+                       label=f'{fit_type} fit', color=fit_color)
         self.line_removal()
         self.axes.legend()
         self.figure_canvas.draw()
         self.vlinelist = []
         self.points = []
+        
+    def temp_save_fit(self, current_fit_result):
+        self.tempfitfile = os.getcwd()+r'\\fit.sav'
+        save_modelresult(current_fit_result, self.tempfitfile)
+
+    def temp_load_fit(self, saved_fit):
+        self.result = load_modelresult(saved_fit)
+        os.remove(self.tempfitfile)
+        self.rangemin, self.rangemax = self.result.userkws['x'][-1], self.result.userkws['x'][0]
+        self.goodregion = np.array([self.rangemin, self.rangemax])
+        self.goodrange = np.where((self.x >= self.goodregion[0]) &
+                                  (self.x <= self.goodregion[1]))
+        self.plot_fit()
         
         # Functions that creates and fits the different models
     def linear_fit(self, event):
@@ -509,7 +579,7 @@ class App(tk.Frame):
                              x=self.x[self.goodrange])
         self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Linear fit')
+        self.fittypevar.set('Linear')
         self.plot_fit()
 
     def polynomial_fit(self, event):
@@ -520,7 +590,7 @@ class App(tk.Frame):
                              x=self.x[self.goodrange])
         self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Polynomial fit')
+        self.fittypevar.set('Polynomial')
         self.plot_fit()
 
     def exponential_fit(self, event):
@@ -531,7 +601,7 @@ class App(tk.Frame):
         params = model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
         self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Exponential fit')
+        self.fittypevar.set('Exponential')
         self.plot_fit()
     
     def powerlaw_fit(self, event):
@@ -542,7 +612,7 @@ class App(tk.Frame):
         params = model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
         self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Exponential fit')
+        self.fittypevar.set('Powerlaw')
         self.plot_fit()
 
     def sine_fit(self, event):
@@ -553,7 +623,7 @@ class App(tk.Frame):
         params = model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
         self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Exponential fit')
+        self.fittypevar.set('Sine')
         self.plot_fit()
     
     def gaussian_fit(self, event):
@@ -568,7 +638,7 @@ class App(tk.Frame):
         if len(self.points) > 3:
             gauss_models = [mdl.GaussianModel(prefix=f'g{i}_') for i in range(len(self.gausscenter))]
             params = linear_model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
-            model = mdl.LinearModel()
+            model = linear_model
             for i in range(len(gauss_models)):
                 params.update(gauss_models[i].make_params())
                 params[f'g{i}_center'].set(value=self.gausscenter[i],
@@ -584,11 +654,39 @@ class App(tk.Frame):
             model = gauss_model + linear_model
         self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
         print(self.result.fit_report())
-        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Gaussian fit')
+        self.fittypevar.set('Gaussian')
         self.plot_fit()
 
     def exponentialgauss_fit(self, event):
-        pass
+        """Fits an exponential gaussian fit+exponential normal fit to any given number of peaks chosen."""
+        self.fitregion()
+        if len(self.lines) > 3:
+            expgausscenter = np.array([self.lines[i+2][0] for i in range(len(self.lines[2:]))])
+        else:
+            expgausscenter = self.lines[2][0]
+        
+        exp_model = mdl.ExponentialModel()
+        if len(self.points) > 3:
+            expgauss_models = [mdl.ExponentialGaussianModel(prefix=f'g{i}_') for i in range(len(expgausscenter))]
+            params = exp_model.guess(self.y[self.goodrange], x=self.x[self.goodrange])
+            model = exp_model
+            for i in range(len(expgauss_models)):
+                params.update(expgauss_models[i].make_params())
+                params[f'g{i}_center'].set(value=expgausscenter[i],
+                                           min=expgausscenter[i]-0.005*expgausscenter[i],
+                                           max=expgausscenter[i]+0.005*expgausscenter[i])
+                model += expgauss_models[i]
+        else:
+            gauss_model = mdl.ExponentialGaussianModel()
+            params = gauss_model.make_params()
+            params['center'].set(value=expgausscenter)
+            params.update(gauss_model.guess(self.y[self.goodrange], x=self.x[self.goodrange]))
+            params.update(exp_model.guess(self.y[self.goodrange], x=self.x[self.goodrange]))
+            model = gauss_model + exp_model
+        self.result = model.fit(self.y[self.goodrange], params, x=self.x[self.goodrange])
+        print(self.result.fit_report())
+        self.fittypevar.set('Exponential Gaussian')
+        self.plot_fit()
     
     def lorentzian_fit(self, event):
         pass
@@ -701,7 +799,7 @@ class App(tk.Frame):
         popupwindow.columnconfigure([0, 1], minsize=25, weight=1)
         popupwindow.rowconfigure(list(row_amount), minsize=25, weight=1)
         for i in range(len(row_amount)-1):
-            lbls[f'lbl_{i}'] = ttk.Label(master=popupwindow, text=labels[f'label{i+1}'], background='#ececec')
+            lbls[f'lbl_{i}'] = ttk.Label(master=popupwindow, text=labels[f'label{i+1}'])#, background='#ececec')
             ents[f'ent_{i}'] = ttk.Entry(master=popupwindow, background='#ececec')
         
         # Creating the submit button.
