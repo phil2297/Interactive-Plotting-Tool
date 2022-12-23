@@ -691,14 +691,14 @@ class App(tk.Frame):
         lbls, ents = {}, {}
         
         # Create the window itself.
-        popupwindow = tk.Toplevel(takefocus=True, background='#fff')
+        popupwindow = tk.Toplevel(takefocus=True, background='#ececec')
         popupwindow.title(title)
         popupwindow.geometry(windowsize)
         popupwindow.columnconfigure([0, 1], minsize=25, weight=1)
         popupwindow.rowconfigure(list(row_amount), minsize=25, weight=1)
         for i in range(len(row_amount)-1):
-            lbls[f'lbl_{i}'] = ttk.Label(master=popupwindow, text=labels[f'label{i+1}'], background='#fff')
-            ents[f'ent_{i}'] = ttk.Entry(master=popupwindow)
+            lbls[f'lbl_{i}'] = ttk.Label(master=popupwindow, text=labels[f'label{i+1}'], background='#ececec')
+            ents[f'ent_{i}'] = ttk.Entry(master=popupwindow, background='#ececec')
         
         # Creating the submit button.
         btn_submit = ttk.Button(master=popupwindow, text='Submit',
