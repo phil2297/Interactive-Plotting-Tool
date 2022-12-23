@@ -25,7 +25,11 @@ class App(tk.Frame):
         the window construct."""
         tk.Frame.__init__(self, master)
         self.master = master
+        self.plottypevar = tk.StringVar(master=self.master)
         self.datacolorvar = tk.StringVar(master=self.master)
+        self.yerrcolorvar = tk.StringVar(master=self.master)
+        self.styles = [style for style in plt.style.available]
+        self.stylevar = tk.StringVar(master=self.master)
         self.master.title('Absorption/Emission line fitter')
 
     def dummy(self):
@@ -65,7 +69,6 @@ class App(tk.Frame):
         editmenu.add_command(label='Zoom', command=self.zoom)
         editmenu.add_command(label='Smooth', command=self.smooth_data)
         editmenu.add_command(label='Cut', command=self.cut_data)
-        editmenu.add_command(label='Change data color', command=self.color_change)
         editmenu.add_separator()
         normalizemenu = tk.Menu(editmenu, tearoff=False)
         normalizemenu.add_command(label='Normalize full data', command=self.normalize_data)
@@ -103,6 +106,10 @@ class App(tk.Frame):
         formatmenu.add_command(label='X limits', command=self.x_lims)
         formatmenu.add_command(label='Y limits', command=self.y_lims)
         formatmenu.add_command(label='Labels', command=self.label_making)
+        formatmenu.add_separator()
+        formatmenu.add_command(label='Color', command=self.color_change)
+        formatmenu.add_command(label='Style', command=self.style_change)
+
 
         # Creating the options for the "help" drop down menu.
         helpmenu.add_command(label='Controls', command=self.dummy)
@@ -132,8 +139,10 @@ class App(tk.Frame):
 
         self.axes = self.figure.add_subplot()
         data_color = self.datacolorvar.get()
+        yerr_color = self.yerrcolorvar.get()
+        plt.style.use(self.stylevar.get())
         self.axes.step(self.x, self.y, label='Data', color=data_color)    
-        self.axes.plot(self.x, self.yerr, '--', label='y-axis error')
+        self.axes.plot(self.x, self.yerr, '--', label='y-error', color=yerr_color)
         self.axes.legend()    
 
         self.figure_canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH,
@@ -193,6 +202,8 @@ class App(tk.Frame):
             self.y = np.array(self.df[self.ycol]).copy()*self.scalingfactor_y
             self.yerr = np.array(self.df[self.yerrcol].copy())*self.scalingfactor_y
             self.datacolorvar.set('blue')
+            self.yerrcolorvar.set('green')
+            self.stylevar.set('default')
             self.draw_figure(master=self.master)
             
     
@@ -301,15 +312,34 @@ class App(tk.Frame):
 
     def color_change(self):
         def choose_color():
-            self.datacolorvar.set(colorchange_ent['ent_0'].get())
+            dat_col = colorchange_ent['ent_0'].get()
+            yerr_col = colorchange_ent['ent_1'].get()
+            if dat_col:
+                self.datacolorvar.set(dat_col)
+            if yerr_col:
+                self.yerrcolorvar.set(yerr_col)
             self.draw_figure(master=self.master)
             colorchangewindow.destroy()
             colorchangewindow.update()
         colorchangewindow, colorchange_ent = self.pop_up_window('Choose plot color',
-                                                                '500x75',
+                                                                '300x75',
                                                                 choose_color,
-                                                                label1='choose matplotlib compatible color [color name/hex code]')
-        
+                                                                label1='Data color [color name/hex code]',
+                                                                label2='Y-error color [color name/hex code]')
+      
+    def style_change(self):
+        print(self.styles)
+        def choose_style():
+            style = stylechange_ent['ent_0'].get()
+            if style:
+                self.stylevar.set(style)
+            self.draw_figure(master=self.master)
+            stylechangewindow.destroy()
+            stylechangewindow.update()
+        stylechangewindow, stylechange_ent = self.pop_up_window('Choose matplotlib style',
+                                                                '500x50', choose_style,
+                                                                label1='Write matplotlib style [see console for styles]')
+      
     def normalize_data(self):
         """Normalizes the full data_set then resets the y_values after drawing it.
         """
@@ -634,7 +664,7 @@ class App(tk.Frame):
         M1 = np.sum((df_moment_x*self.scalingfactor_x)*self.profile/(df_moment_yerr*self.scalingfactor_y)**2)/np.sum(self.profile/(df_moment_yerr*self.scalingfactor_y)**2)
         EW = self.lstep*np.sum(self.profile)
         if self.scalingfactor_y == 1:
-            self.scalingfactor_yerr = EW/np.mean(df_moment_yerr) #rought automatic scaling for yerr
+            self.scalingfactor_yerr = EW/np.mean(df_moment_yerr) #rough automatic scaling for yerr
         else:
             self.scalingfactor_yerr = self.scalingfactor_y
         EWerr = self.lstep*np.sqrt(np.sum((df_moment_yerr*self.scalingfactor_yerr)**2))
