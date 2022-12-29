@@ -253,7 +253,6 @@ class App(tk.Frame):
         self.goodregion = np.array([self.rangemin, self.rangemax])
         self.goodrange = np.where((self.x >= self.goodregion[0]) &
                                   (self.x <= self.goodregion[1]))
-        self.axes.plot(self.x[self.goodrange], self.result.best_fit, 'r--x', label='Fit')
         self.plot_fit()
         
     def save_fit(self, current_fit_result):
@@ -873,7 +872,7 @@ class App(tk.Frame):
                                            size=float(label_ents[f'ent_{2}'].get()))
             y_label = self.axes.set_ylabel(label_ents[f'ent_{1}'].get(),
                                            size=float(label_ents[f'ent_{2}'].get()))
-            self.axes.legend(fontsize=float(label_ents[f'ent_{2}'].get())/(float(label_ents[f'ent_{2}'].get())/2))
+            self.axes.legend(fontsize=float(label_ents[f'ent_{2}'].get())*0.9)
             self.figure_canvas.draw()
 
             labelwindow.destroy()
