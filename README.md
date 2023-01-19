@@ -1,5 +1,5 @@
 # Interactive Plotting Tool
-This tool is created to help plot and create fits for data that has x and y values. Utilities for this tool (will) include the ability to edit and view the data in many different ways. It also includes tools to fit a multitude of different functions using the lmfit library and some custom made default functions. This was used for my bachelors thesis.
+This tool is created to help plot and create fits for data that has x and y values. Utilities for this tool (will) include the ability to edit and view the data in many different ways. It also includes tools to fit a multitude of different functions using the lmfit library and some custom made default functions. This was used for my bachelors thesis. NOTE: There might be issues with using this on MacOS that I haven't resolved.
 
 ## Current Features:
 - Importing a file (containing a certain data-structure) and plotting the data
