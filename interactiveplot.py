@@ -25,8 +25,9 @@ class App(tk.Frame):
         the window construct."""
         tk.Frame.__init__(self, master)
         operating_system = sys.platform
+        style = ttk.Style()
         if operating_system == 'darwin':
-            ttk.style.use('aqua')
+            style.theme_use('aqua')
         self.master = master
         self.plottypevar = tk.StringVar(master=self.master)
         self.datacolorvar = tk.StringVar(master=self.master)
